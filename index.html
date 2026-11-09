@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atmosphere — Real-Time Weather Explorer | Sameera Bhanu</title>
+  
+  <meta name="description" content="A modern, Apple Weather-inspired real-time weather explorer built with semantic HTML5, modern CSS3, and vanilla JavaScript powered by Open-Meteo REST APIs.">
+  <meta name="author" content="Sameera Bhanu">
+  <meta name="theme-color" content="#38BDF8">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Atmosphere — Real-Time Weather Explorer">
+  <meta property="og:description" content="Explore live global weather conditions, 24-hour hourly forecast, and 7-day Apple-style spectrum forecasts.">
+  <meta property="og:type" content="website">
+
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='38' fill='%23F59E0B'/><path d='M70 70H30a20 20 0 0 1 0-40 25 25 0 0 1 45-8 18 18 0 0 1-5 48z' fill='%23FFFFFF' opacity='0.9'/></svg>">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=SF+Pro+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="theme-clear-day">
+  <!-- Dynamic Atmospheric Background Backdrop -->
+  <div class="sky-backdrop" aria-hidden="true">
+    <div class="sky-glow-layer"></div>
+    <div class="sky-clouds-layer"></div>
+    <div class="sky-stars-layer"></div>
+  </div>
+
+  <div class="app-layout">
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+      <div class="header-container">
+        <!-- Brand Identity -->
+        <div class="brand-area">
+          <div class="brand-icon-wrap" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" class="brand-logo-svg">
+              <circle cx="16" cy="16" r="14" fill="url(#brandGrad)" />
+              <path d="M22 22H11C8.2 22 6 19.8 6 17C6 14.4 8 12.3 10.5 12.1C11.5 8.6 14.7 6 18.5 6C23 6 26.6 9.5 26.6 13.9C28.7 14.3 30 16.2 30 18.5C30 20.4 28.5 22 26.5 22" fill="#FFFFFF" fill-opacity="0.95" />
+              <defs>
+                <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#38BDF8" />
+                  <stop offset="100%" stop-color="#0284C7" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <div class="brand-title-row">
+              <h1 class="brand-name">Atmosphere</h1>
+              <span class="live-pill" title="Live meteorological data feed"><span class="live-pulse"></span> LIVE</span>
+            </div>
+            <p class="brand-tagline">Real-Time Weather Explorer</p>
+          </div>
+        </div>
+
+        <!-- Search Bar with Live Geocoding Autocomplete -->
+        <div class="search-section" role="search">
+          <form class="search-form" id="search-form" onsubmit="event.preventDefault();">
+            <div class="search-input-wrapper">
+              <svg class="search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="8.5" cy="8.5" r="5.5" />
+                <line x1="12.5" y1="12.5" x2="17" y2="17" stroke-linecap="round" />
+              </svg>
+              
+              <input 
+                type="text" 
+                id="search-input" 
+                class="search-input" 
+                placeholder="Search city, region or country... (Press /)" 
+                autocomplete="off" 
+                spellcheck="false"
+                aria-label="Search city or location"
+                aria-autocomplete="list"
+                aria-controls="search-suggestions"
+              >
+
+              <button type="button" id="clear-search-btn" class="clear-search-btn hidden" aria-label="Clear search input">
+                <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+              </button>
+
+              <div class="search-kbd-hint" aria-hidden="true">/</div>
+
+              <!-- GPS Locate Me Button -->
+              <button type="button" id="locate-me-btn" class="locate-btn" title="Use current location (GPS)" aria-label="Use current location">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="locate-icon">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke-linecap="round"/>
+                  <circle cx="12" cy="12" r="8" stroke-dasharray="2 4"/>
+                </svg>
+                <span class="locate-label">Locate</span>
+              </button>
+            </div>
+
+            <!-- Autocomplete Results Dropdown -->
+            <div id="search-suggestions" class="search-suggestions-dropdown hidden" role="listbox"></div>
+          </form>
+        </div>
+
+        <!-- Utility Controls (Refresh, Unit Toggle, Favorites) -->
+        <div class="header-actions">
+          <!-- Refresh Live Data Button -->
+          <button id="refresh-btn" class="action-btn" title="Refresh live weather data" aria-label="Refresh weather data">
+            <svg class="refresh-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3.5 10a6.5 6.5 0 1 1 1.9 4.6l1.6-1.6M3 14.5v-4.5h4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <!-- Temperature Unit Toggle: °C / °F -->
+          <div class="unit-toggle-group" role="radiogroup" aria-label="Temperature Unit">
+            <button type="button" id="unit-c-btn" class="unit-toggle-btn active" role="radio" aria-checked="true" aria-label="Celsius">°C</button>
+            <button type="button" id="unit-f-btn" class="unit-toggle-btn" role="radio" aria-checked="false" aria-label="Fahrenheit">°F</button>
+          </div>
+
+          <!-- Favorites Drawer Trigger -->
+          <button id="open-favorites-btn" class="action-btn favorites-btn" title="View saved favorite cities" aria-label="Saved favorites">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="fav-icon">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            <span id="favorites-count-badge" class="badge">0</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Recent Searches Chip Strip -->
+    <nav class="recents-nav" aria-label="Recent Searches">
+      <div class="recents-container">
+        <span class="recents-label">Recent:</span>
+        <div id="recent-chips-list" class="recent-chips-list">
+          <!-- Populated dynamically -->
+        </div>
+        <button id="clear-recents-btn" class="clear-recents-btn hidden" title="Clear search history">Clear</button>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+      
+      <!-- Network / Notification Banner -->
+      <div id="alert-banner" class="alert-banner hidden" role="alert">
+        <span class="alert-icon">⚠️</span>
+        <span id="alert-message" class="alert-text"></span>
+        <button id="alert-action-btn" class="alert-action-btn">Retry</button>
+      </div>
+
+      <!-- Hero Weather Overview Card -->
+      <section class="hero-card" id="hero-card" aria-label="Current Weather Overview">
+        <div class="hero-top-row">
+          <div class="location-heading">
+            <div class="city-name-wrapper">
+              <h2 id="current-city-name" class="city-name">London</h2>
+              <!-- Favorite Toggle Button -->
+              <button id="toggle-fav-btn" class="favorite-star-btn" title="Add city to favorites" aria-label="Toggle favorite city">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="star-icon">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+              </button>
+            </div>
+            <p id="current-region-country" class="region-country">England, United Kingdom</p>
+          </div>
+
+          <div class="hero-timestamp-pill">
+            <span class="clock-icon">🕒</span>
+            <span id="current-local-time">--:--</span>
+            <span class="time-sep">•</span>
+            <span id="current-local-date">Loading...</span>
+          </div>
+        </div>
+
+        <!-- Center Temperature & Icon Showcase -->
+        <div class="hero-temperature-row">
+          <div class="temp-condition-box">
+            <div class="temperature-display">
+              <span id="current-temp-value" class="temp-number">--</span>
+              <span id="current-temp-unit" class="temp-deg">°</span>
+            </div>
+            <div class="condition-labels">
+              <h3 id="current-condition-text" class="condition-name">Loading...</h3>
+              <div class="high-low-badge">
+                <span class="hl-item"><span class="hl-arrow">↑</span> H: <strong id="today-high">--°</strong></span>
+                <span class="hl-divider">/</span>
+                <span class="hl-item"><span class="hl-arrow">↓</span> L: <strong id="today-low">--°</strong></span>
+                <span class="hl-divider">•</span>
+                <span class="hl-item">Feels like <strong id="current-feels-like">--°</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero Condition SVG Illustration -->
+          <div id="hero-weather-icon" class="hero-icon-container" aria-hidden="true">
+            <!-- Dynamic SVG injected here -->
+          </div>
+        </div>
+
+        <!-- Weather Summary Advisory Phrase -->
+        <div class="hero-summary-box">
+          <p id="weather-summary-text" class="summary-text">
+            Fetching real-time satellite and meteorological readings...
+          </p>
+        </div>
+      </section>
+
+      <!-- 24-Hour Hourly Forecast Section -->
+      <section class="forecast-section hourly-section" aria-label="Hourly Weather Forecast">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <svg class="section-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="10" cy="10" r="7"/>
+              <polyline points="10 6 10 10 13 12"/>
+            </svg>
+            <h3 class="section-title">24-Hour Forecast</h3>
+          </div>
+          <!-- Desktop Scroll Chevrons -->
+          <div class="hourly-scroll-controls" aria-hidden="true">
+            <button id="hourly-scroll-left" class="scroll-arrow-btn" aria-label="Scroll hourly forecast backward">‹</button>
+            <button id="hourly-scroll-right" class="scroll-arrow-btn" aria-label="Scroll hourly forecast forward">›</button>
+          </div>
+        </div>
+
+        <div id="hourly-track" class="hourly-scroll-track" tabindex="0" role="region" aria-label="Horizontally scrollable 24-hour weather forecast">
+          <!-- 24 Hourly Cards Injected Here -->
+        </div>
+      </section>
+
+      <!-- Two-Column Layout: 7-Day Spectrum & Bento Details -->
+      <div class="dashboard-split-grid">
+        
+        <!-- Left Column: 7-Day Daily Forecast with Apple Weather Range Bars -->
+        <section class="forecast-section daily-section" aria-label="7-Day Daily Weather Forecast">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <svg class="section-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="14" height="13" rx="2"/>
+                <line x1="3" y1="8" x2="17" y2="8"/>
+                <line x1="8" y1="2" x2="8" y2="5"/>
+                <line x1="12" y1="2" x2="12" y2="5"/>
+              </svg>
+              <h3 class="section-title">7-Day Forecast</h3>
+            </div>
+            <span class="range-legend-label">Weekly Spectrum</span>
+          </div>
+
+          <div id="daily-forecast-list" class="daily-forecast-list">
+            <!-- 7-Day Rows with Apple Weather Range Spectrum Bars Injected Here -->
+          </div>
+        </section>
+
+        <!-- Right Column: Current Weather Details (Bento Grid) -->
+        <section class="bento-section" aria-label="Current Meteorological Details">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <svg class="section-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="6" height="6" rx="1"/>
+                <rect x="11" y="3" width="6" height="6" rx="1"/>
+                <rect x="3" y="11" width="6" height="6" rx="1"/>
+                <rect x="11" y="11" width="6" height="6" rx="1"/>
+              </svg>
+              <h3 class="section-title">Current Weather Details</h3>
+            </div>
+          </div>
+
+          <div class="bento-grid">
+            <!-- Card 1: UV Index -->
+            <article class="bento-card card-uv">
+              <div class="card-head">
+                <span class="card-title-icon">☀️</span>
+                <h4 class="card-title">UV Index</h4>
+              </div>
+              <div class="card-body">
+                <div class="metric-main">
+                  <span id="metric-uv-val" class="metric-big-val">--</span>
+                  <span id="metric-uv-level" class="metric-badge">--</span>
+                </div>
+                <!-- UV Progress Bar -->
+                <div class="uv-bar-track">
+                  <div id="metric-uv-bar" class="uv-bar-fill" style="width: 0%;"></div>
+                </div>
+                <p id="metric-uv-advice" class="card-foot-note">Loading solar data...</p>
+              </div>
+            </article>
+
+            <!-- Card 2: Wind & Direction Compass -->
+            <article class="bento-card card-wind">
+              <div class="card-head">
+                <span class="card-title-icon">💨</span>
+                <h4 class="card-title">Wind & Gusts</h4>
+              </div>
+              <div class="card-body wind-body">
+                <div class="wind-info">
+                  <span id="metric-wind-speed" class="metric-big-val">--</span>
+                  <span id="metric-wind-dir-text" class="card-sub-val">--</span>
+                </div>
+                <!-- Precision Compass Graphic -->
+                <div class="compass-wrap" aria-hidden="true">
+                  <div class="compass-dial">
+                    <span class="comp-point comp-n">N</span>
+                    <span class="comp-point comp-e">E</span>
+                    <span class="comp-point comp-s">S</span>
+                    <span class="comp-point comp-w">W</span>
+                    <div id="compass-needle" class="compass-needle">
+                      <div class="needle-tip-north"></div>
+                      <div class="needle-tip-south"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer-info">
+                <span id="metric-wind-compass-deg">--° Compass Heading</span>
+              </div>
+            </article>
+
+            <!-- Card 3: Sunrise & Sunset Solar Arc -->
+            <article class="bento-card card-sun">
+              <div class="card-head">
+                <span class="card-title-icon">🌅</span>
+                <h4 class="card-title">Sun Schedule</h4>
+              </div>
+              <div class="card-body">
+                <div class="metric-main">
+                  <span id="metric-sun-primary" class="metric-big-val">--:--</span>
+                  <span id="metric-sun-event-name" class="card-sub-val">Sunset</span>
+                </div>
+                <!-- Visual Solar Arc -->
+                <div class="solar-arc-wrap" aria-hidden="true">
+                  <svg viewBox="0 0 200 90" class="solar-arc-svg">
+                    <!-- Arc curve -->
+                    <path d="M 20 80 Q 100 10 180 80" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3" stroke-dasharray="4 4"/>
+                    <!-- Horizon Line -->
+                    <line x1="10" y1="80" x2="190" y2="80" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+                    <!-- Sun marker circle placed via JS -->
+                    <circle id="solar-sun-dot" cx="100" cy="45" r="7" fill="#F59E0B" filter="drop-shadow(0 0 6px rgba(245,158,11,0.8))"/>
+                  </svg>
+                </div>
+                <div class="sun-times-row">
+                  <span class="sun-time-item">Rise: <strong id="metric-sunrise-time">--:--</strong></span>
+                  <span class="sun-time-item">Set: <strong id="metric-sunset-time">--:--</strong></span>
+                </div>
+              </div>
+            </article>
+
+            <!-- Card 4: Humidity & Dew Point -->
+            <article class="bento-card card-humidity">
+              <div class="card-head">
+                <span class="card-title-icon">💧</span>
+                <h4 class="card-title">Humidity</h4>
+              </div>
+              <div class="card-body">
+                <div class="metric-main">
+                  <span id="metric-humidity-val" class="metric-big-val">--%</span>
+                  <span id="metric-dew-point" class="card-sub-val">Dew point --°</span>
+                </div>
+                <!-- Humidity Bar -->
+                <div class="metric-meter-bar">
+                  <div id="metric-humidity-bar" class="meter-bar-fill" style="width: 0%;"></div>
+                </div>
+                <p id="metric-humidity-comfort" class="card-foot-note">Calculating comfort index...</p>
+              </div>
+            </article>
+
+            <!-- Card 5: Visibility -->
+            <article class="bento-card card-visibility">
+              <div class="card-head">
+                <span class="card-title-icon">👁️</span>
+                <h4 class="card-title">Visibility</h4>
+              </div>
+              <div class="card-body">
+                <div class="metric-main">
+                  <span id="metric-visibility-val" class="metric-big-val">--</span>
+                  <span id="metric-visibility-label" class="card-sub-val">Standard</span>
+                </div>
+                <p id="metric-visibility-desc" class="card-foot-note">Loading atmospheric clarity data...</p>
+              </div>
+            </article>
+
+            <!-- Card 6: Atmospheric Pressure -->
+            <article class="bento-card card-pressure">
+              <div class="card-head">
+                <span class="card-title-icon">🧭</span>
+                <h4 class="card-title">Pressure</h4>
+              </div>
+              <div class="card-body">
+                <div class="metric-main">
+                  <span id="metric-pressure-val" class="metric-big-val">--</span>
+                  <span id="metric-pressure-state" class="card-sub-val">Normal</span>
+                </div>
+                <!-- Pressure Range Gauge -->
+                <div class="pressure-gauge-track">
+                  <div id="metric-pressure-needle" class="pressure-gauge-needle" style="left: 50%;"></div>
+                </div>
+                <p id="metric-pressure-desc" class="card-foot-note">Standard atmospheric pressure.</p>
+              </div>
+            </article>
+
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Slide-Over Favorites Drawer -->
+    <aside id="favorites-drawer" class="favorites-drawer hidden" aria-labelledby="favorites-title" role="dialog" aria-modal="true">
+      <div class="drawer-backdrop" id="drawer-backdrop"></div>
+      <div class="drawer-panel">
+        <div class="drawer-header">
+          <div class="drawer-title-wrap">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="drawer-star-icon">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+            </svg>
+            <h3 id="favorites-title" class="drawer-title">Saved Locations</h3>
+          </div>
+          <button id="close-drawer-btn" class="drawer-close-btn" aria-label="Close favorites drawer">×</button>
+        </div>
+
+        <div class="drawer-content">
+          <p class="drawer-subtitle">Quickly switch between your favorite global destinations.</p>
+          <div id="favorites-cards-list" class="favorites-cards-list">
+            <!-- Favorite city cards dynamically rendered here -->
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Modern App Footer -->
+    <footer class="app-footer">
+      <div class="footer-container">
+        <div class="footer-info">
+          <p class="footer-brand">
+            <strong>Atmosphere</strong> — Real-Time Weather Explorer
+          </p>
+          <p class="footer-meta">
+            Designed & Developed by <strong>Sameera Bhanu</strong> • 1st Year B.Tech CSE, Shri Vishnu Engineering College for Women (SVECW), Bhimavaram
+          </p>
+          <p class="footer-api-note">
+            Powered by live open-access meteorological data from <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo REST API</a>. No hardcoded or simulated values.
+          </p>
+        </div>
+
+        <div class="footer-quick-cities">
+          <span class="quick-cities-title">Explore Global Cities:</span>
+          <div class="quick-links-row">
+            <button type="button" class="quick-city-btn" data-city="London" data-lat="51.5085" data-lon="-0.1257" data-country="United Kingdom">London</button>
+            <button type="button" class="quick-city-btn" data-city="Tokyo" data-lat="35.6895" data-lon="139.6917" data-country="Japan">Tokyo</button>
+            <button type="button" class="quick-city-btn" data-city="New York" data-lat="40.7128" data-lon="-74.0060" data-country="United States">New York</button>
+            <button type="button" class="quick-city-btn" data-city="Paris" data-lat="48.8566" data-lon="2.3522" data-country="France">Paris</button>
+            <button type="button" class="quick-city-btn" data-city="Sydney" data-lat="-33.8688" data-lon="151.2093" data-country="Australia">Sydney</button>
+            <button type="button" class="quick-city-btn" data-city="Bhimavaram" data-lat="16.5449" data-lon="81.5212" data-country="India">Bhimavaram</button>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Vanilla JavaScript Modules -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
