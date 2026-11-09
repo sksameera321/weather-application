@@ -25,11 +25,11 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="theme-clear-day">
-  <!-- Dynamic Atmospheric Background Backdrop -->
+  <!-- Cinematic Weather Photography Canvas -->
   <div class="sky-backdrop" aria-hidden="true">
-    <div class="sky-glow-layer"></div>
-    <div class="sky-clouds-layer"></div>
-    <div class="sky-stars-layer"></div>
+    <div id="sky-bg-primary" class="sky-photo-layer active"></div>
+    <div id="sky-bg-secondary" class="sky-photo-layer"></div>
+    <div class="sky-vignette-overlay"></div>
   </div>
 
   <div class="app-layout">
@@ -54,6 +54,7 @@
             <div class="brand-title-row">
               <h1 class="brand-name">Atmosphere</h1>
               <span class="live-pill" title="Live meteorological data feed"><span class="live-pulse"></span> LIVE</span>
+              <span id="sky-ambient-pill" class="ambient-pill">☀️ Clear Sky</span>
             </div>
             <p class="brand-tagline">Real-Time Weather Explorer</p>
           </div>
