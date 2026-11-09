@@ -148,7 +148,7 @@ async function loadCityWeather(city) {
   DOM.currentConditionText.textContent = 'Updating...';
 
   try {
-    const data = await WeatherApi.getForecast(city.latitude, city.longitude, city.timezone);
+    const data = await WeatherApi.getForecast(city.latitude, city.longitude, city.timezone, city.name);
     state.weatherData = data;
 
     // Process forecast data models
@@ -156,6 +156,18 @@ async function loadCityWeather(city) {
     state.dailyList = Forecast.processDailyForecast(data.daily, data.current.temperature_2m);
 
     renderAll();
+
+    if (data._fallback) {
+      showAlert(`Network restricted: Displaying meteorological estimation for ${city.name}.`, () => {
+        loadCityWeather(city);
+      });
+    } else if (data._cached) {
+      showAlert(`Offline mode: Showing cached weather for ${city.name}.`, () => {
+        loadCityWeather(city);
+      });
+    } else {
+      hideAlert();
+    }
   } catch (err) {
     console.error('Failed to load weather:', err);
     showAlert(`Unable to fetch real-time weather for ${city.name}. (${err.message})`, () => {
