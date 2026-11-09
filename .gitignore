@@ -1,0 +1,7 @@
+# Environment & IDE
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
+.vscode/
+.idea/
