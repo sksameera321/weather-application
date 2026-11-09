@@ -52,6 +52,34 @@ export function getWeatherInfo(code) {
 }
 
 /**
+ * Curated Photographic Atmospheric Backdrops
+ * Ultra-high-resolution, optimized real-world sky photography
+ * paired to specific meteorological conditions and day/night cycles.
+ */
+export const WEATHER_BACKGROUNDS = {
+  'clear-day': 'https://images.unsplash.com/photo-1601297183305-6df142704ea2?w=1920&auto=format&fit=crop&q=85',
+  'clear-night': 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=1920&auto=format&fit=crop&q=85',
+  'cloudy-day': 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=1920&auto=format&fit=crop&q=85',
+  'cloudy-night': 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=1920&auto=format&fit=crop&q=85',
+  'rain': 'https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=1920&auto=format&fit=crop&q=85',
+  'thunderstorm': 'https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?w=1920&auto=format&fit=crop&q=85',
+  'snow': 'https://images.unsplash.com/photo-1491002052546-bf38f186af56?w=1920&auto=format&fit=crop&q=85',
+  'fog': 'https://images.unsplash.com/photo-1487621167305-5d248087c724?w=1920&auto=format&fit=crop&q=85'
+};
+
+/**
+ * Resolve optimal photography background URL for active weather state
+ */
+export function getWeatherBackground(code, isDay = 1) {
+  if (code >= 95) return WEATHER_BACKGROUNDS['thunderstorm'];
+  if (code >= 71) return WEATHER_BACKGROUNDS['snow'];
+  if (code >= 51) return WEATHER_BACKGROUNDS['rain'];
+  if (code === 45 || code === 48) return WEATHER_BACKGROUNDS['fog'];
+  if (code === 2 || code === 3) return isDay ? WEATHER_BACKGROUNDS['cloudy-day'] : WEATHER_BACKGROUNDS['cloudy-night'];
+  return isDay ? WEATHER_BACKGROUNDS['clear-day'] : WEATHER_BACKGROUNDS['clear-night'];
+}
+
+/**
  * Precision SVG Icons for crisp, Apple-like weather presentation
  */
 export const WEATHER_ICONS = {
