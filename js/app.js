@@ -9,6 +9,7 @@ import { Storage } from './storage.js';
 import { WeatherApi } from './api.js';
 import { 
   getWeatherInfo, 
+  getWeatherBackground,
   getConditionIconSvg, 
   formatTemp, 
   formatWind, 
@@ -30,12 +31,17 @@ const state = {
   unit: Storage.getUnit(), // 'C' or 'F'
   isLoading: false,
   searchSuggestions: [],
-  selectedSuggestionIdx: -1
+  selectedSuggestionIdx: -1,
+  currentBgUrl: '',
+  activeBgLayer: 'primary'
 };
 
 // DOM Selectors
 const DOM = {
   body: document.body,
+  skyBgPrimary: document.getElementById('sky-bg-primary'),
+  skyBgSecondary: document.getElementById('sky-bg-secondary'),
+  skyAmbientPill: document.getElementById('sky-ambient-pill'),
   searchInput: document.getElementById('search-input'),
   clearSearchBtn: document.getElementById('clear-search-btn'),
   locateMeBtn: document.getElementById('locate-me-btn'),
@@ -382,29 +388,83 @@ function renderBento() {
 }
 
 /**
- * Update Atmospheric Background Class
+ * Update Atmospheric Background Class & Crossfade Sky Photography
  */
 function updateAtmosphericTheme() {
   if (!state.weatherData || !state.weatherData.current) return;
   const current = state.weatherData.current;
   const isDay = current.is_day === 1;
   const code = current.weather_code;
+  const info = getWeatherInfo(code);
 
   DOM.body.className = ''; // Reset
 
+  let themeClass = 'theme-clear-day';
+  let themeColor = '#0284c7';
+
   if (code >= 95) {
-    DOM.body.classList.add('theme-thunderstorm');
+    themeClass = 'theme-thunderstorm';
+    themeColor = '#1e1b4b';
   } else if (code >= 71) {
-    DOM.body.classList.add('theme-snowy');
+    themeClass = 'theme-snowy';
+    themeColor = '#475569';
   } else if (code >= 51) {
-    DOM.body.classList.add('theme-rainy');
+    themeClass = 'theme-rainy';
+    themeColor = '#334155';
   } else if (code === 45 || code === 48) {
-    DOM.body.classList.add('theme-foggy');
+    themeClass = 'theme-foggy';
+    themeColor = '#4b5563';
   } else if (code === 2 || code === 3) {
-    DOM.body.classList.add(isDay ? 'theme-cloudy-day' : 'theme-cloudy-night');
+    themeClass = isDay ? 'theme-cloudy-day' : 'theme-cloudy-night';
+    themeColor = isDay ? '#475569' : '#0f172a';
   } else {
-    DOM.body.classList.add(isDay ? 'theme-clear-day' : 'theme-clear-night');
+    themeClass = isDay ? 'theme-clear-day' : 'theme-clear-night';
+    themeColor = isDay ? '#0284c7' : '#090d16';
   }
+
+  DOM.body.classList.add(themeClass);
+
+  // Update theme-color meta tag
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) metaTheme.setAttribute('content', themeColor);
+
+  // Update ambient sky pill indicator
+  if (DOM.skyAmbientPill) {
+    const icon = isDay ? '☀️' : '🌙';
+    DOM.skyAmbientPill.textContent = `${icon} ${info.description}`;
+  }
+
+  // Crossfade Photographic Sky Background
+  const targetBgUrl = getWeatherBackground(code, isDay);
+  if (state.currentBgUrl !== targetBgUrl) {
+    state.currentBgUrl = targetBgUrl;
+    transitionSkyBackground(targetBgUrl);
+  }
+}
+
+/**
+ * Crossfade background photography layers smoothly
+ */
+function transitionSkyBackground(url) {
+  if (!DOM.skyBgPrimary || !DOM.skyBgSecondary) return;
+
+  const isPrimaryActive = state.activeBgLayer === 'primary';
+  const incomingLayer = isPrimaryActive ? DOM.skyBgSecondary : DOM.skyBgPrimary;
+  const outgoingLayer = isPrimaryActive ? DOM.skyBgPrimary : DOM.skyBgSecondary;
+
+  // Preload image before switching to guarantee zero flash
+  const img = new Image();
+  img.src = url;
+  img.onload = () => {
+    incomingLayer.style.backgroundImage = `url("${url}")`;
+    incomingLayer.classList.add('active');
+    outgoingLayer.classList.remove('active');
+    state.activeBgLayer = isPrimaryActive ? 'secondary' : 'primary';
+  };
+  img.onerror = () => {
+    // If external image fails, gracefully fallback to CSS gradients
+    incomingLayer.style.backgroundImage = 'none';
+  };
 }
 
 /**
